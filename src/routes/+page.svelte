@@ -71,6 +71,19 @@
     resetGame()
   }
 
+  function pauseGame(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      switch (state) {
+        case 'playing':
+          state = 'paused'
+          break
+        case 'paused':
+          state = 'playing'
+          break
+      }
+    }
+  }
+
   $: if (state === 'playing') {
     !timerId && startGameTimer()
   }
@@ -82,9 +95,15 @@
   $: console.log({ state, selected, matches })
 </script>
 
+<svelte:window on:keyup={pauseGame} />
+
 {#if state === 'init'}
   <h1>{app.title}</h1>
   <button on:click={() => (state = 'playing')}>Start Play</button>
+{/if}
+
+{#if state === 'paused'}
+  <h1>Game paused</h1>
 {/if}
 
 {#if state === 'playing'}
