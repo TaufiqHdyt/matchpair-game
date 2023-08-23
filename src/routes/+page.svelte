@@ -10,6 +10,16 @@
   let maxMatches = grid.length / 2 // only unique emojies
   let selected: number[] = []
   let matches: string[] = []
+  let timerId: NodeJS.Timeout;
+  let time: number = 20
+
+  function startGameTimer() {
+    function countdown() {
+      state !== 'paused' && (time -= 1)
+    }
+
+    timerId = setInterval(countdown, 1000)
+  }
 
   function createGrid() {
     let cards = new Set<string>()
@@ -45,8 +55,17 @@
     state = 'won'
   }
 
+  function gameLost() {
+    state = 'lost'
+  }
+
+  $: if (state === 'playing') {
+    !timerId && startGameTimer()
+  }
+
   $: selected.length === 2 && matchCards()
   $: maxMatches === matches.length && gameWon()
+  $: time === 0 && gameLost()
 
   $: console.log({ state, selected, matches })
 </script>
@@ -57,6 +76,9 @@
 {/if}
 
 {#if state === 'playing'}
+  <h1 class="timer" class:pulse={time <= 10}>
+    {time}
+  </h1>
   <div class="play">
     <div class="matches">
       {#each matches as card}
@@ -125,5 +147,19 @@
     text-align: center;
     gap: 0.5rem;
     font-size: 2.5rem;
+  }
+
+  .timer {
+    transition: color 0.3 ease;
+  }
+  .pulse {
+    color: var(--pulse);
+    animation: pulse 1s infinite ease;
+  }
+
+  @keyframes pulse {
+    to {
+      scale: 1.4;
+    }
   }
 </style>
