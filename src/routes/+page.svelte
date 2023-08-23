@@ -105,10 +105,11 @@
         <button
           class="card"
           class:selected={isSelected}
+          class:flip={isSelectedOrMatched}
           disabled={isSelectedOrMatched}
           on:click={() => selectCard(cardIndex)}
         >
-          <div class:match>{card}</div>
+          <div class="back" class:match>{card}</div>
         </button>
       {/each}
     </div>
@@ -141,9 +142,25 @@
     width: 8rem;
     font-size: 4rem;
     background-color: var(--bg-secondary);
+    transition: rotate 0.3s ease-out;
+    transform-style: preserve-3d;
 
     &.selected {
       border: 4px solid var(--border);
+    }
+
+    &.flip {
+      rotate: y 180deg;
+      pointer-events: none;
+    }
+
+    & .back {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-content: center;
+      backface-visibility: hidden;
+      rotate: y 180deg;
     }
 
     & .match {
