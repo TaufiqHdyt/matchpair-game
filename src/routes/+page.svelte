@@ -27,7 +27,28 @@
     return array.sort(() => Math.random() - 0.5)
   }
 
-  console.log(grid)
+  function selectCard(cardIndex: number) {
+    selected = selected.concat(cardIndex)
+  }
+
+  function matchCards() {
+    const [first, second] = selected
+
+    if (grid[first] === grid[second]) {
+      matches = matches.concat(grid[first])
+    }
+
+    setTimeout(() => (selected = []), 250)
+  }
+
+  function gameWon() {
+    state = 'won'
+  }
+
+  $: selected.length === 2 && matchCards()
+  $: maxMatches === matches.length && gameWon()
+
+  $: console.log({ state, selected, matches })
 </script>
 
 {#if state === 'init'}
@@ -36,12 +57,27 @@
 {/if}
 
 {#if state === 'playing'}
-  <div class="cards">
-    {#each grid as card, cardIndex}
-      <button class="card">
+  <div class="play">
+    <div class="matches">
+      {#each matches as card}
         <div>{card}</div>
-      </button>
-    {/each}
+      {/each}
+    </div>
+    <div class="cards">
+      {#each grid as card, cardIndex}
+        {@const isSelected = selected.includes(cardIndex)}
+        {@const isSelectedOrMatched = selected.includes(cardIndex) || matches.includes(card)}
+        {@const match = matches.includes(card)}
+        <button
+          class="card"
+          class:selected={isSelected}
+          disabled={isSelectedOrMatched}
+          on:click={() => selectCard(cardIndex)}
+        >
+          <div class:match>{card}</div>
+        </button>
+      {/each}
+    </div>
   </div>
 {/if}
 
@@ -56,6 +92,10 @@
 {/if}
 
 <style>
+  .play {
+    display: grid;
+    grid-template-columns: 1fr 9fr;
+  }
   .cards {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -71,5 +111,19 @@
     &.selected {
       border: 4px solid var(--border);
     }
+
+    & .match {
+      transition: opacity 0.25s ease-out;
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  .matches {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+    font-size: 2.5rem;
   }
 </style>
