@@ -10,7 +10,7 @@
   let maxMatches = grid.length / 2 // only unique emojies
   let selected: number[] = []
   let matches: string[] = []
-  let timerId: NodeJS.Timeout;
+  let timerId: NodeJS.Timeout | null = null
   let time: number = 20
 
   function startGameTimer() {
@@ -51,12 +51,24 @@
     setTimeout(() => (selected = []), 250)
   }
 
+  function resetGame() {
+    timerId && clearInterval(timerId)
+    grid = createGrid()
+    maxMatches = grid.length / 2
+    selected = []
+    matches = []
+    timerId = null
+    time = 20
+  }
+
   function gameWon() {
     state = 'won'
+    resetGame()
   }
 
   function gameLost() {
     state = 'lost'
+    resetGame()
   }
 
   $: if (state === 'playing') {
