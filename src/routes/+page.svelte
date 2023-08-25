@@ -2,10 +2,9 @@
   import { app } from '$lib/config'
   import { emoji } from '$lib/emoji'
 
-  type State = 'waiting' | 'playing' | 'paused' | 'gameover'
-  type Type = 'START' | 'ESCAPE' | 'TICK' | 'CLICK'
-
   import { useMachine } from '$lib/machine'
+
+  import type { State, Event } from '$lib/machine'
 
   let size: number = 20
   let grid = createGrid()
@@ -15,7 +14,7 @@
   let timerId: NodeJS.Timeout | null = null
   let time: number = 60
 
-  function gameMachine(state: State, event: { type: Type, data: number }) {
+  function gameMachine(state: State, event: Event) {
     switch (state) {
       case 'waiting':
         if (event.type === 'START') {
@@ -137,9 +136,6 @@
 {/if}
 
 {#if $state === 'playing'}
-  <h1 class="timer" class:pulse={$state !== 'paused' && time <= 10}>
-    {time}
-  </h1>
   <div class="play">
     <div class="matches">
       {#each matches as card}
@@ -162,6 +158,11 @@
         </button>
       {/each}
     </div>
+    <div class="time">
+      <h1 class="timer" class:pulse={time <= 10}>
+        {time}
+      </h1>
+    </div>
   </div>
 {/if}
 
@@ -177,7 +178,7 @@
 <style>
   .play {
     display: grid;
-    grid-template-columns: 1fr 9fr;
+    grid-template-columns: 1fr 8fr 1fr;
   }
   .cards {
     display: grid;
@@ -227,6 +228,7 @@
   }
 
   .timer {
+    text-align: center;
     transition: color 0.3 ease;
   }
   .pulse {
