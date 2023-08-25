@@ -2,23 +2,79 @@
   import { app } from '$lib/config'
   import { emoji } from '$lib/emoji'
 
-  type State = 'init' | 'playing' | 'paused' | 'won' | 'lost'
+  type State = 'waiting' | 'playing' | 'paused' | 'gameover'
+  type Type = 'START' | 'ESCAPE' | 'TICK' | 'CLICK'
 
-  let state: State = 'init'
+  import { useMachine } from '$lib/machine'
+
   let size: number = 20
   let grid = createGrid()
   let maxMatches = grid.length / 2 // only unique emojies
   let selected: number[] = []
   let matches: string[] = []
   let timerId: NodeJS.Timeout | null = null
-  let time: number = 20
+  let time: number = 60
+
+  function gameMachine(state: State, event: { type: Type, data: number }) {
+    switch (state) {
+      case 'waiting':
+        if (event.type === 'START') {
+          return 'playing'
+        }
+      case 'playing':
+        if (event.type === 'ESCAPE') {
+          stopGameTimer()
+          return 'paused'
+        }
+
+        if (event.type === 'TICK') {
+          if (event.data === 0) {
+            stopGameTimer()
+            return 'gameover'
+          }
+        }
+
+        if (event.type === 'CLICK') {
+          selectCard(event.data)
+          selected.length === 2 && matchCards()
+
+          if (matches.length === maxMatches) {
+            stopGameTimer()
+            return 'gameover'
+          }
+
+          return 'playing'
+        }
+      case 'paused':
+        if (event.type === 'ESCAPE') {
+          startGameTimer()
+          return 'playing'
+        }
+      case 'gameover':
+        if (event.type === 'START') {
+          resetGame()
+          return 'playing'
+        }
+      default:
+        return state
+    }
+  }
+
+  const { state, send } = useMachine(gameMachine, 'waiting')
 
   function startGameTimer() {
     function countdown() {
-      state !== 'paused' && (time -= 1)
+      if ($state !== 'paused') {
+        time -= 1
+        send({ type: 'TICK', data: time })
+      }
     }
 
     timerId = setInterval(countdown, 1000)
+  }
+
+  function stopGameTimer() {
+    timerId && clearInterval(timerId)
   }
 
   function createGrid() {
@@ -52,62 +108,36 @@
   }
 
   function resetGame() {
-    timerId && clearInterval(timerId)
     grid = createGrid()
     maxMatches = grid.length / 2
     selected = []
     matches = []
     timerId = null
-    time = 20
-  }
-
-  function gameWon() {
-    state = 'won'
-    resetGame()
-  }
-
-  function gameLost() {
-    state = 'lost'
-    resetGame()
+    time = 60
   }
 
   function pauseGame(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      switch (state) {
-        case 'playing':
-          state = 'paused'
-          break
-        case 'paused':
-          state = 'playing'
-          break
-      }
-    }
+    e.key === 'Escape' && send({ type: 'ESCAPE' })
   }
 
-  $: if (state === 'playing') {
+  $: if ($state === 'playing') {
     !timerId && startGameTimer()
   }
-
-  $: selected.length === 2 && matchCards()
-  $: maxMatches === matches.length && gameWon()
-  $: time === 0 && gameLost()
-
-  $: console.log({ state, selected, matches })
 </script>
 
 <svelte:window on:keyup={pauseGame} />
 
-{#if state === 'init'}
+{#if $state === 'waiting'}
   <h1>{app.title}</h1>
-  <button on:click={() => (state = 'playing')}>Start Play</button>
+  <button on:click={() => send({ type: 'START' })}>Start Play</button>
 {/if}
 
-{#if state === 'paused'}
+{#if $state === 'paused'}
   <h1>Game paused</h1>
 {/if}
 
-{#if state === 'playing'}
-  <h1 class="timer" class:pulse={time <= 10}>
+{#if $state === 'playing'}
+  <h1 class="timer" class:pulse={$state !== 'paused' && time <= 10}>
     {time}
   </h1>
   <div class="play">
@@ -126,7 +156,7 @@
           class:selected={isSelected}
           class:flip={isSelectedOrMatched}
           disabled={isSelectedOrMatched}
-          on:click={() => selectCard(cardIndex)}
+          on:click={() => send({ type: 'CLICK', data: cardIndex })}
         >
           <div class="back" class:match>{card}</div>
         </button>
@@ -135,14 +165,13 @@
   </div>
 {/if}
 
-{#if state === 'lost'}
-  <h1>You Lost: 😢</h1>
-  <button on:click={() => (state = 'playing')}>Play Again</button>
-{/if}
-
-{#if state === 'won'}
-  <h1>You Won: 🎉</h1>
-  <button on:click={() => (state = 'playing')}>Play Again</button>
+{#if $state === 'gameover'}
+  {#if matches.length === maxMatches}
+    <h1>You Won: 🎉</h1>
+  {:else}
+    <h1>You Lost: 😢</h1>
+  {/if}
+  <button on:click={() => send({ type: 'START' })}>Play Again</button>
 {/if}
 
 <style>
