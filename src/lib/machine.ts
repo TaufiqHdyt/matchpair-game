@@ -18,13 +18,11 @@ interface ClickEvent {
   data: number
 }
 
-type State = 'waiting' | 'playing' | 'paused' | 'gameover'
+export type State = 'waiting' | 'playing' | 'paused' | 'gameover'
 
-type Event = StartEvent | EscapeEvent | TickEvent | ClickEvent
+export type Event = StartEvent | EscapeEvent | TickEvent | ClickEvent
 
-type Machine = (state: State, event: Event) => State
-
-export type { State, Event }
+export type Machine = (state: State, event: Event) => State
 
 export function useMachine(machine: Machine, initial: State) {
   const state = writable<State>(initial)

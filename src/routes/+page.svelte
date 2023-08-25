@@ -103,7 +103,7 @@
       matches = matches.concat(grid[first])
     }
 
-    setTimeout(() => (selected = []), 250)
+    setTimeout(() => (selected = []), 300)
   }
 
   function resetGame() {
@@ -117,6 +117,7 @@
 
   function pauseGame(e: KeyboardEvent) {
     e.key === 'Escape' && send({ type: 'ESCAPE' })
+    e.key === 'Enter' && $state !== 'paused' && send({ type: 'START' })
   }
 
   $: if ($state === 'playing') {
@@ -213,7 +214,7 @@
     }
 
     & .match {
-      transition: opacity 0.25s ease-out;
+      transition: opacity 0.3s ease-out;
       opacity: 0.4;
       cursor: default;
     }
@@ -239,6 +240,28 @@
   @keyframes pulse {
     to {
       scale: 1.4;
+    }
+  }
+
+  @media (width <= 425px) {
+    .play {
+      grid-template-columns: 1fr;
+    }
+    .matches {
+      flex-direction: row;
+    }
+    .cards {
+      gap: 0.25rem;
+    }
+    .card {
+      height: 6rem;
+      width: 5rem;
+    }
+
+    @keyframes pulse {
+      to {
+        opacity: 0.1;
+      }
     }
   }
 </style>
