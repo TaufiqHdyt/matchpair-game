@@ -13,6 +13,10 @@
   let matches: string[] = []
   let timerId: NodeJS.Timeout | null = null
   let time: number = 60
+  let scores = {
+    current: 0,
+    highest: 0
+  }
 
   function gameMachine(state: State, event: Event) {
     switch (state) {
@@ -38,6 +42,8 @@
           selected.length === 2 && matchCards()
 
           if (matches.length === maxMatches) {
+            scores.current = time
+            scores.highest = Math.max(...Object.values(scores))
             stopGameTimer()
             return 'gameover'
           }
@@ -173,6 +179,8 @@
   {:else}
     <h1>You Lost: 😢</h1>
   {/if}
+  <h2>Your Score: {scores.current}</h2>
+  <p>Highest Score: {scores.highest}</p>
   <button on:click={() => send({ type: 'START' })}>Play Again</button>
 {/if}
 
